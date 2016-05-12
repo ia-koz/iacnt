@@ -13,9 +13,9 @@
 struct senddata_t
 {
 	senddata_t( sockaddr_in * ServerAddress , int_t Number )
-			:
-			serveradr( ServerAddress ) ,
-			number( Number )
+		:
+		serveradr( ServerAddress ) ,
+		number( Number )
 	{ }
 
 	sockaddr_in * serveradr;
@@ -70,20 +70,20 @@ int main( const int_t argc , const char_t * const argv[] , const char_t * const 
 
 
 	// Основной цикл программы
-	int                     result;
-	std::list<pthread_t>    threadslist;
-	std::list<senddata_t *> dataslist;
+	int                   result;
+	std::list<pthread_t>  threadslist;
+	std::list<senddata_t> dataslist;
 	while ( true )
 	{
 		std::cout << "Enter:" << std::endl;
 		int_t input;
 		while ( std::cin >> input )
 		{
-			senddata_t * sd = new senddata_t( { &srvadr , input } );
+			senddata_t sd = senddata_t( { &srvadr , input } );
 			dataslist.push_back( sd );
 
 			pthread_t pt;
-			result = ::pthread_create( &pt , NULL , threadworker , dataslist.back( ) );
+			result = ::pthread_create( &pt , NULL , threadworker , &dataslist.back( ) );
 			if ( result != 0 )
 			{
 				::perror( "Creating the thread" );
@@ -110,17 +110,12 @@ int main( const int_t argc , const char_t * const argv[] , const char_t * const 
 			return EXIT_FAILURE;
 		}
 	}
-
-	// Очищаем данные
-	for ( std::list<senddata_t *>::iterator it = dataslist.begin( ) ; it != dataslist.end( ) ; ++it )
-	{
-		delete *it;
-	}
 	::printf( "Done\n" );
 
 
 	return EXIT_SUCCESS;
 }
+
 /// Функция потока ( создание, открытие, отправка, получение и закрытие )
 void * threadworker( void * data )
 {
@@ -133,7 +128,7 @@ void * threadworker( void * data )
 	{
 		error_t error = errno;
 		std::cout << "Can't create socket: " << error << std::endl;
-		return nullptr;
+		::pthread_exit( nullptr );
 	}
 
 	// Подключаем сокет
@@ -143,7 +138,7 @@ void * threadworker( void * data )
 		std::cout << "Can't connect socket: " << error << std::endl;
 		::close( sock );
 
-		return nullptr;
+		::pthread_exit( nullptr );
 	}
 
 	// Отправим данные на сервер
@@ -153,7 +148,7 @@ void * threadworker( void * data )
 		std::cout << "Can't send data: " << error << std::endl;
 		::close( sock );
 
-		return nullptr;
+		::pthread_exit( nullptr );
 	}
 
 	// Получим данные с сервера
@@ -166,7 +161,7 @@ void * threadworker( void * data )
 		std::cout << "Can't recive data: " << error << std::endl;
 		::close( sock );
 
-		return nullptr;
+		::pthread_exit( nullptr );
 	}
 
 	std::cout << "Server reply: ";
@@ -178,5 +173,5 @@ void * threadworker( void * data )
 
 	// Закрываемся
 	::close( sock );
-	return nullptr;
+	::pthread_exit( nullptr );
 }
